@@ -188,13 +188,17 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 		cancelRequest:  cancel,
 	}
 
-	var tlsConfig *tls.Config
+	tlsConfig := &tls.Config{}
 	if state.TLSConfig != nil {
 		tlsConfig = state.TLSConfig.Clone()
-		if !args.http2 {
-			// Overriding the NextProtos to avoid talking http2
-			tlsConfig.NextProtos = []string{"http/1.1"}
-		}
+	}
+	if !args.http2 {
+		// Always force HTTP/1.1 unless the caller explicitly requests HTTP/2.
+		// Without this, Go's http2.clientConnPool may reuse an HTTP/2 connection
+		// established by k6's built-in HTTP client (e.g. in setup()), causing
+		// xk6-sse's independent transport to fail immediately against HTTP/2-first
+		// origins such as CloudFront.
+		tlsConfig.NextProtos = []string{"http/1.1"}
 	}
 
 	sseClient.httpClient = &http.Client{
