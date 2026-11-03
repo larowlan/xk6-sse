@@ -1,4 +1,4 @@
-module github.com/phymbert/xk6-sse
+module github.com/larowlan/xk6-sse
 
 go 1.25.13
 
