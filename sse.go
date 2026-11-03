@@ -199,15 +199,18 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 		}
 	}
 
+	dialContext := state.Dialer.DialContext
+	if args.http2 {
+		dialContext = nil
+	}
+
 	transport := &http.Transport{
-		DialContext:     state.Dialer.DialContext,
+		DialContext:     dialContext,
 		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: tlsConfig,
 		// FIXME phymbert: it would be more interesting to allow reusing the transport across iterations
 		DisableKeepAlives: state.Options.NoConnectionReuse.ValueOrZero() || state.Options.NoVUConnectionReuse.ValueOrZero(),
-	}
-	if args.http2 {
-		transport.ForceAttemptHTTP2 = true
+		ForceAttemptHTTP2: args.http2,
 	}
 	_, _ = fmt.Fprintf(os.Stderr, "xk6-sse: http2=%v ForceAttemptHTTP2=%v\n", args.http2, transport.ForceAttemptHTTP2)
 
