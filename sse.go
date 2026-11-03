@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptrace"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -208,6 +209,7 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 	if args.http2 {
 		transport.ForceAttemptHTTP2 = true
 	}
+	_, _ = fmt.Fprintf(os.Stderr, "xk6-sse: http2=%v ForceAttemptHTTP2=%v\n", args.http2, transport.ForceAttemptHTTP2)
 
 	sseClient.httpClient = &http.Client{
 		// FUTURE: support falling back on global timeout re: https://github.com/grafana/k6/issues/3932
