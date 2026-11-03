@@ -155,6 +155,7 @@ func (mi *sse) Open(url string, args ...sobek.Value) (*HTTPResponse, error) {
 			client.handleEvent("event", rt.ToValue(event))
 
 		case readErr := <-readErrChan:
+			_, _ = fmt.Fprintf(os.Stderr, "xk6-sse read error: %v\n", readErr)
 			client.handleEvent("error", rt.ToValue(readErr))
 
 		case <-ctx.Done():
