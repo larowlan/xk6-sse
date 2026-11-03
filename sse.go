@@ -206,9 +206,7 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 		DisableKeepAlives: state.Options.NoConnectionReuse.ValueOrZero() || state.Options.NoVUConnectionReuse.ValueOrZero(),
 	}
 	if args.http2 {
-		transport.Protocols = new(http.Protocols)
-		transport.Protocols.SetHTTP1(true)
-		transport.Protocols.SetHTTP2(true)
+		transport.ForceAttemptHTTP2 = true
 	}
 
 	sseClient.httpClient = &http.Client{
