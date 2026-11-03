@@ -84,6 +84,7 @@ type sseOpenArgs struct {
 	cookieJar   *cookiejar.Jar
 	tagsAndMeta *metrics.TagsAndMeta
 	timeout     time.Duration
+	http2       bool
 }
 
 // Exports returns the exports of the sse module.
@@ -187,11 +188,13 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 		cancelRequest:  cancel,
 	}
 
-	// Overriding the NextProtos to avoid talking http2
 	var tlsConfig *tls.Config
 	if state.TLSConfig != nil {
 		tlsConfig = state.TLSConfig.Clone()
-		tlsConfig.NextProtos = []string{"http/1.1"}
+		if !args.http2 {
+			// Overriding the NextProtos to avoid talking http2
+			tlsConfig.NextProtos = []string{"http/1.1"}
+		}
 	}
 
 	sseClient.httpClient = &http.Client{
@@ -546,6 +549,8 @@ func parseConnectOptionalArgs(paramsV sobek.Value, rt *sobek.Runtime, parsedArgs
 				return fmt.Errorf("invalid sse.open() timeout: %w", err)
 			}
 			parsedArgs.timeout = timeout
+		case "http2":
+			parsedArgs.http2 = params.Get(k).ToBoolean()
 		}
 	}
 	return nil
