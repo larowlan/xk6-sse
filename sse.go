@@ -28,7 +28,6 @@ import (
 	httpModule "go.k6.io/k6/v2/js/modules/k6/http"
 	"go.k6.io/k6/v2/lib"
 	"go.k6.io/k6/v2/metrics"
-	"golang.org/x/net/http2"
 )
 
 type (
@@ -207,7 +206,9 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 		DisableKeepAlives: state.Options.NoConnectionReuse.ValueOrZero() || state.Options.NoVUConnectionReuse.ValueOrZero(),
 	}
 	if args.http2 {
-		_ = http2.ConfigureTransport(transport)
+		transport.Protocols = new(http.Protocols)
+		transport.Protocols.SetHTTP1(true)
+		transport.Protocols.SetHTTP2(true)
 	}
 
 	sseClient.httpClient = &http.Client{
