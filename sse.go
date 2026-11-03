@@ -28,6 +28,7 @@ import (
 	httpModule "go.k6.io/k6/v2/js/modules/k6/http"
 	"go.k6.io/k6/v2/lib"
 	"go.k6.io/k6/v2/metrics"
+	"golang.org/x/net/http2"
 )
 
 type (
@@ -197,16 +198,21 @@ func (mi *sse) open(ctx context.Context, state *lib.State, rt *sobek.Runtime,
 		}
 	}
 
+	transport := &http.Transport{
+		DialContext:     state.Dialer.DialContext,
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: tlsConfig,
+		// FIXME phymbert: it would be more interesting to allow reusing the transport across iterations
+		DisableKeepAlives: state.Options.NoConnectionReuse.ValueOrZero() || state.Options.NoVUConnectionReuse.ValueOrZero(),
+	}
+	if args.http2 {
+		_ = http2.ConfigureTransport(transport)
+	}
+
 	sseClient.httpClient = &http.Client{
 		// FUTURE: support falling back on global timeout re: https://github.com/grafana/k6/issues/3932
-		Timeout: args.timeout,
-		Transport: &http.Transport{
-			DialContext:     state.Dialer.DialContext,
-			Proxy:           http.ProxyFromEnvironment,
-			TLSClientConfig: tlsConfig,
-			// FIXME phymbert: it would be more interesting to allow reusing the transport across iterations
-			DisableKeepAlives: state.Options.NoConnectionReuse.ValueOrZero() || state.Options.NoVUConnectionReuse.ValueOrZero(),
-		},
+		Timeout:   args.timeout,
+		Transport: transport,
 	}
 
 	// httpClient.Jar must never be nil
