@@ -113,6 +113,7 @@ func (mi *sse) Open(url string, args ...sobek.Value) (*HTTPResponse, error) {
 	defer connEndHook()
 	if err != nil {
 		// Pass the error to the user script before exiting immediately
+		state.Logger.WithError(err).Error("xk6-sse: connection error")
 		client.handleEvent("error", rt.ToValue(err))
 		if state.Options.Throw.Bool {
 			return nil, err
