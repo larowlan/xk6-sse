@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptrace"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -438,8 +439,16 @@ func (c *Client) readEvents(readChan chan Event, errorChan chan error, closeChan
 				return
 			}
 		default:
+			rest, _ := io.ReadAll(reader)
+			body := append(line, rest...)
+			n := len(body)
+			if n > 8192 {
+				n = 8192
+			}
+			msg := fmt.Sprintf("unexpected response (len=%d): %s", len(body), body[:n])
+			fmt.Fprintf(os.Stderr, "[xk6-sse] %s\n", msg)
 			select {
-			case errorChan <- errors.New("unknown event: " + string(line)):
+			case errorChan <- errors.New(msg):
 			case <-c.done:
 				return
 			}
